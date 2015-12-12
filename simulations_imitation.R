@@ -17,10 +17,6 @@ pB<-c(rdistBC(1))
 pC<-c(rdistBC(1))
 
 # PROFIT FUNCTION
-pA=5.2
-pB=2
-pC=10.5
-
 
 
 profit_ftn<-function(pA,pB,pC){
@@ -62,6 +58,7 @@ profit_ftn<-function(pA,pB,pC){
 
 fbb<-function(x) profit_ftn(x[1],x[2],x[3]) #to compute max
 
+# test
 
 # Best Imitation Functions
 
@@ -73,12 +70,14 @@ Best<-function(pA,pB,pC){
   p_best<-p[which.max(profit)]
   which.max(profit)
   st_best<-(p_best>5)
-  pA<-(which.max(profit)==1)*(p_best)+(which.max(profit)>1)*(p_best-5*st_best)
+  pA<-(which.max(profit)==1)*(p_best)+(which.max(profit)>1)*(p_best-5*st_best) # to translate CS price into NCS price
   pB<-(which.max(profit)==1)*(p_best+5*st[2])+(which.max(profit)>1)*(p_best)
   pC<-(which.max(profit)==1)*(p_best+5*st[3])+(which.max(profit)>1)*(p_best)
   p_best<-c(pA,pB,pC)
   
   }
+
+#test
 
 mu=0.1
 lambda=0.3
@@ -89,43 +88,6 @@ pC=5
 print(Best(pA,pB,pC))
 
 
-
-# imitation graph in the triopoly
-
-mu<-0.5
-lambda<-0.5
-
-
-pA<-pC<-5
-pB<-seq(from=0, to=10,by=0.01)
-p<-rbind(pA,pB,pC)
-p<-matrix(p,nrow=3)
-p<-t(p)
-
-imit_best<-function(x) Best(x[1],x[2],x[3]) #to compute as function of vector
-
-tC<-apply(X=p,MARGIN=1,FUN=imit_best)
-st<-(tC>5) #idneitfy standard offers
-st
-tC
-p
-st
-as.numeric(tC[2,])
-as.numeric(st[2,])
-p2<-cbind(p,st[2,],as.numeric(tC[2,]-5*as.numeric(st[2,])))
-p2<-matrix(p2,ncol = 5)
-P2<-cbind(as.numeric(seq(1,1001,1)),p2)
-P3<-matrix(P2,ncol = 6)
-P<-data.frame(P3)
-P$X1 <- factor(P$X1, levels = P$X1)
-
-library(ggplot2)
-
-pB<-P[,3]
-pC<-P[,6]
-format<-factor(P[,5])
-
-ggplot(P, aes(x=pB, y=pC, group=1, color=format)) + geom_point(size=4) + geom_point(color='steelblue',size=1, alpha=0.3)
 
 
 # RUNNING SIMULATION OF BEST RESPONSE DYNAMICS FOR GRAPHICAL REPRESENTATION
@@ -144,13 +106,13 @@ pB<-5
 pC<-6
 
 P<-c(0,pA,pB,pC)
-mu=0
-lambda=0
-jig<-0.01
-jig_st<-0.001
+mu=0.2
+lambda=0.2
+jig<-0.01 #size of price experimentation
+jig_st<-0.001 #probability of random format change
 
 
-T<-18000
+T<-5000
 i<-1
 while(i<=T){
   pA<-Best(pA,pB,pC)[1]
@@ -180,11 +142,69 @@ while(i<=T){
 
 P
 P2<-matrix(P,ncol = 4)
-P2<-P2[2:(T+1),]
+P2<-P2[2:(T+1),] # get rid of initial values
 Pf<-data.frame(P2)
+Pf
+
+time<-Pf[,1]
+prices<-Pf[,2] # it does not matter which firm's price is chosen since all follow each other
+nr_formatA<-(Pf[,3]>5)+(Pf[,4]>5)+1 # number of firms with format A
+
+
+# graph in paper
+ggplot(Pf, aes(x=time, y=prices,group=1, colour=nr_formatA)) + geom_point(size=2) + geom_line(color='steelblue',size=1, alpha=0.3)
+
+
+
+
 qplot(c(seq(2,T+1,1)), Pf[,2]-5*as.numeric(Pf[,2]>5), data=Pf)
 
 qplot(c(seq(2,T+1,1)), Pf[,3]-5*as.numeric(Pf[,3]>5), data=Pf)
 qplot(c(seq(2,T+1,1)), as.numeric(Pf[,3]>5), data=Pf)
 qplot(c(seq(2,T+1,1)), Pf[,4]-5*as.numeric(Pf[,4]>5), data=Pf)
 qplot(c(seq(2,T+1,1)), as.numeric(Pf[,4]>5), data=Pf)
+
+
+
+
+
+
+
+
+# imitation graph in the triopoly
+
+mu<-0.5
+lambda<-0.5
+
+
+pA<-1
+pC<-5 #we do not care about this number since we compute what is the best to imitate of A and B for firm C
+pB<-seq(from=0, to=10,by=0.01)
+p<-rbind(pA,pB,pC)
+p<-matrix(p,nrow=3)
+p<-t(p)
+
+imit_best<-function(x) Best(x[1],x[2],x[3]) #to compute as function of vector
+
+tC<-apply(X=p,MARGIN=1,FUN=imit_best)
+st<-(tC>5) #idneitfy standard offers
+st
+tC
+p
+st
+as.numeric(tC[2,])
+as.numeric(st[2,])
+p2<-cbind(p,st[2,],as.numeric(tC[2,]-5*as.numeric(st[2,])))
+p2<-matrix(p2,ncol = 5)
+P2<-cbind(as.numeric(seq(1,1001,1)),p2)
+P3<-matrix(P2,ncol = 6)
+P<-data.frame(P3)
+P$X1 <- factor(P$X1, levels = P$X1)
+
+library(ggplot2)
+
+pB<-P[,3]
+pC<-P[,6]
+format<-factor(P[,5])
+
+ggplot(P, aes(x=pB, y=pC, group=1, color=format)) + geom_point(size=4) + geom_point(color='steelblue',size=1, alpha=0.3)
