@@ -1,6 +1,7 @@
 # DISTRIBUTION FUNCTION; FOR DRAW OF RANDOM PRICES
 
 library(distr)
+library(nnet)
 
 pricesA<-seq(from=0, to=5,by=0.1) # careful with choosing step, in simulations, step=0.1. step=0.01 to get more precision in graph
 pricesBC<-c(pricesA,pricesA+5) # in second place, the CS prices --> identified as CS by adding 5
@@ -26,6 +27,8 @@ elementwise.all.equal <- Vectorize(function(x, y) {isTRUE(all.equal(x, y))})
 
 v<-5
 e<-1
+mu<-0.2
+lambda<-0.2
 pA<-2
 pB<-2.9
 pC<-6.9
@@ -74,9 +77,16 @@ BRC<-function(pA,pB,pC){
   P_C<-cbind(pA,pB,pricesBC)
   P_C<-matrix(P_C,ncol = 3)
   tC<-apply(X=P_C,MARGIN=1,FUN=fbb) # vector of profits
-  tC<-cbind(c(pricesBC),t(tC))
-  BR_C<-tC[which.max(tC[,4]),1] # note, could take two values --> make choice, at the moment, random.
+  tC<-cbind(c(pricesBC),round(t(tC),digits=2))
+  BR_C<-tC[which.is.max(tC[,4]),1] # choose at random if tie
 }
+
+pA<-2
+pB<-5
+pC<-6.9
+mu<-0
+lambda<-0
+
 
 BRB<-function(pA,pB,pC){
   #vector of prices for given pA, pC
@@ -86,9 +96,11 @@ BRB<-function(pA,pB,pC){
   P_B<-cbind(pA,pricesBC,pC)
   P_B<-matrix(P_B,ncol = 3)
   tB<-apply(X=P_B,MARGIN=1,FUN=fbb) # vector of profits
-  tB<-cbind(c(pricesBC),t(tB))
-  BR_B<-tB[which.max(tB[,3]),1] # note, could take two values --> make choice
+  tB<-cbind(c(pricesBC),round(t(tB),digits=2))
+  tB
+  BR_B<-tB[which.is.max(tB[,3]),1] # note, choose at random when can take two values
 }
+
 
 BRA<-function(pA,pB,pC){
   #vector of prices for given pB, pC
@@ -98,9 +110,14 @@ BRA<-function(pA,pB,pC){
   P_A<-cbind(pricesA,pB,pC)
   P_A<-matrix(P_A,ncol = 3)
   tA<-apply(X=P_A,MARGIN=1,FUN=fbb) # vector of profits
-  tA<-cbind(c(pricesA),t(tA))
-  BR_A<-tA[which.max(tA[,2]),1] # note, could take two values --> make choice
+  tA<-cbind(c(pricesA),round(t(tA),digits=2))
+  BR_A<-tA[which.is.max(tA[,2]),1]
 }
+
+
+fBRA<-function(x) BRA(x[1],x[2],x[3]) #to compute as function of vector
+fBRB<-function(x) BRB(x[1],x[2],x[3]) #to compute as function of vector
+fBRC<-function(x) BRC(x[1],x[2],x[3]) #to compute as function of vector
 
 
 # answers to scenarios to be played by participants in advance of experiment
@@ -123,9 +140,6 @@ results
 
 # BRF graph in the triopoly
 
-mu<-0.2
-lambda<-0.2
-
 
 pA<-pC<-5
 pB<-seq(from=0, to=10,by=0.1)
@@ -133,13 +147,11 @@ p<-rbind(pA,pB,pC)
 p<-matrix(p,nrow=3)
 p<-t(p)
 
-fBRC<-function(x) BRC(x[1],x[2],x[3]) #to compute as function of vector
-
 tC<-apply(X=p,MARGIN=1,FUN=fBRC)
 st<-(tC>5) #idneitfy standard offers
 p2<-cbind(p,st,as.numeric(tC)-5*st)
 p2<-matrix(p2,ncol = 5)
-P2<-cbind(as.numeric(seq(1,1001,1)),p2)
+P2<-cbind(as.numeric(seq(1,101,1)),p2)
 P3<-matrix(P2,ncol = 6)
 P<-data.frame(P3)
 P$X1 <- factor(P$X1, levels = P$X1)
