@@ -46,8 +46,8 @@ for(mu in unique(vmu)){
     print(mu)
     print(lambda)
 # initialize distributions!
-distA <-DiscreteDistribution(supp = pricesA, prob = rep(1/length(pricesA),length(pricesA)))
-distBC <-DiscreteDistribution(supp = pricesBC, prob = rep(1/length(pricesBC),length(pricesBC)))
+  distA <-DiscreteDistribution(supp = pricesA, prob = rep(1/length(pricesA),length(pricesA)))
+  distBC <-DiscreteDistribution(supp = pricesBC, prob = rep(1/length(pricesBC),length(pricesBC)))
 
 # if no CS at start
 # distBC <-DiscreteDistribution(supp = pricesBC, prob = c(rep(1/length(pricesA),length(pricesA)),rep(0,length(pricesA))) ) 
@@ -55,85 +55,78 @@ distBC <-DiscreteDistribution(supp = pricesBC, prob = rep(1/length(pricesBC),len
 #distA <-DiscreteDistribution(supp = pricesA, prob = c(1,rep(0,length(pricesA)-1)))
 #distBC <-DiscreteDistribution(supp = pricesBC, prob = c(1,rep(0,length(pricesBC)-1)))
 
-rdistA <- r(distA)                 # function to create random variates from p
-rdistBC <- r(distBC)
+  rdistA <- r(distA)                 # function to create random variates from p
+  rdistBC <- r(distBC)
 
 # initialize storage of results
-gA<-pricesA
-gBC<-pricesBC
-exp_profitA<-0
-exp_profitBC<-0
+  gA<-pricesA
+  gBC<-pricesBC
+  exp_profitA<-0
+  exp_profitBC<-0
 
-#mu<-0.70
-#lambda<-100
+# 30 iterations
+  i<-1
+  N<-10000
+  while(i<=30){
+    set.seed(1)                      # for reproduceable example
+    print(i)
 
-# 15 iterations
-i<-1
-N<-1000000
-while(i<=30){
-set.seed(1)                      # for reproduceable example
-print(i)
+    pA<-c(rdistA(N))
+    pA<-c(pA,pricesA,pricesA) # guarantee full support
+    pB<-c(rdistBC(N))
+    pB<-c(pB,pricesBC)
+    pC<-c(rdistBC(N))
+    pC<-c(pC,pricesBC)
 
-pA<-c(rdistA(N))
-pA
-pA<-c(pA,pricesA,pricesA) # guarantee full support
-pB<-c(rdistBC(N))
-pB<-c(pB,pricesBC)
-pC<-c(rdistBC(N))
-pC<-c(pC,pricesBC)
+    stA<-(pA<=5)
+    stB<-(pB>5)
+    stC<-(pC>5)
 
-stA<-(pA<=5)
-stB<-(pB>5)
-stC<-(pC>5)
+    p<-cbind(pA,pB-5*stB,pC-5*stC,stA,stB,stC)
+    p<-matrix(p,ncol = 6)
 
-p<-cbind(pA,pB-5*stB,pC-5*stC,stA,stB,stC)
-p<-matrix(p,ncol = 6)
+    t<-apply(X=p,MARGIN=1,FUN=profit_ftn) # computing  profit by level of prices
 
-t<-apply(X=p,MARGIN=1,FUN=profit_ftn) # computing  profit by level of prices
+    fA<-cbind(c(t(p[,1])),c(t(p[,4])),c(t[1,]))
+    fBC<-cbind(c(t(p[,2:3])),c(t(p[,5:6])),c(t[2:3,]))
+    fBC<-cbind(fBC[,1]+5*fBC[,2],fBC)
 
-fA<-cbind(c(t(p[,1])),c(t(p[,4])),c(t[1,]))
-fBC<-cbind(c(t(p[,2:3])),c(t(p[,5:6])),c(t[2:3,]))
-fBC<-cbind(fBC[,1]+5*fBC[,2],fBC)
+    mean_profitA<-tapply(X=fA[,3],INDEX=fA[,1],FUN=mean) # mean profit by price
+    mean_profitBC<-tapply(X=fBC[,4],INDEX=fBC[,1],FUN=mean)
 
-mean_profitA<-tapply(X=fA[,3],INDEX=fA[,1],FUN=mean) # mean profit by price
-mean_profitBC<-tapply(X=fBC[,4],INDEX=fBC[,1],FUN=mean)
+    p_adjustA<-mean_profitA/sum(mean_profitA)
+    p_adjustBC<-mean_profitBC/sum(mean_profitBC)
 
-p_adjustA<-mean_profitA/sum(mean_profitA)
-p_adjustBC<-mean_profitBC/sum(mean_profitBC)
+    # giving results as they go
+    print(sum(p_adjustA*mean_profitA)) # expected profit A
+    print(sum(p_adjustBC*mean_profitBC))
+    print(sum(p_adjustBC[51:100])) # percentage CS
 
-# giving results as they go
-print(sum(p_adjustA*mean_profitA)) # expected profit A
-print(sum(p_adjustBC*mean_profitBC))
-print(sum(p_adjustBC[51:100])) # percentage CS
+    gA<-cbind(gA,p_adjustA)
+    gBC<-cbind(gBC,p_adjustBC)
 
-gA<-cbind(gA,p_adjustA)
-gBC<-cbind(gBC,p_adjustBC)
+    distA <-DiscreteDistribution(supp = pricesA, prob = c(p_adjustA))
+    distBC <-DiscreteDistribution(supp = pricesBC, prob = c(p_adjustBC))
 
-distA <-DiscreteDistribution(supp = pricesA, prob = c(p_adjustA))
-distBC <-DiscreteDistribution(supp = pricesBC, prob = c(p_adjustBC))
+    rdistA<- r(distA)                 
+    rdistBC <- r(distBC)              
 
-rdistA<- r(distA)                 
-rdistBC <- r(distBC)              
-
-i<-i+1
-}
+    i<-i+1
+    }
 
 #storage
-nam <- paste("resultsA_", mu,"_", lambda, sep = "")
-assign(nam,cbind(gA))
-nam <- paste("resultsBC_", mu,"_", lambda, sep = "")
-assign(nam,cbind(gBC))
-
+  nam <- paste("resultsA_", mu,"_", lambda, sep = "")
+  assign(nam,cbind(gA))
+  nam <- paste("resultsBC_", mu,"_", lambda, sep = "")
+  assign(nam,cbind(gBC))
   }
 }
 
-
+# giving out results, by stage in evolution of probabilities of each prices
 
 f = function(expr) eval(parse(text=expr))
 for(mu in unique(vmu)){
   for(lambda in unique(vlambda)){
-    #mu<-1
-    #lambda<-0
     print("mu is");print(mu)
     print("lambda is");print(lambda)
     j<-paste("results_", mu,"_", lambda, sep = "")
@@ -144,6 +137,8 @@ for(mu in unique(vmu)){
   }
 }
 
+# graphical representation of distributions and their evolution over time
+
 library(ggplot2)
 a<-resultsBC_0.7_100
 dim(a)
@@ -152,28 +147,12 @@ price=rep(a[1:50,1],6)
 cdf = c(cumsum(a[,2]),cumsum(a[,5]),cumsum(a[,31]))
 label=c(rep("NCS t=02",50),rep("CS t=02",50),rep("NCS t=04",50),rep("CS t=04",50),rep("NCS t=30",50),rep("CS t=30",50))
 
+prices<-c(as.numeric(a[1:50,1]))
+proba1<-c(as.numeric(a[1:50,31]))
+sum(proba1*prices)/sum(proba1) # average price when own format
+
+proba2<-c(as.numeric(a[51:100,31]))
+sum(proba2*prices)/sum(proba2) # average price when format A
 df <- data.frame(x=price,y = cdf,z=label)
-df
+
 qplot(price, cdf, data=df, group=label, geom="line") +  geom_point(size = 5, aes(shape=label, colour = label)) 
-
-
-
-qplot(a[,1],(a[,2]),ylim = c(0,1))
-sum(a[51:100,2])
-par(new = TRUE)
-plot(cumsum(a[,5]),ylim = c(0,1))
-sum(a[51:100,5])
-par(new = TRUE)
-plot(cumsum(a[,10]),ylim = c(0,1))
-sum(a[51:100,10])
-par(new = TRUE)
-plot(cumsum(a[,15]),ylim = c(0,1))
-sum(a[51:100,15])
-
-plot(pricesA,gA[,2],ylim = c(0,0.07))
-par(new = TRUE)
-plot(gA[,5],ylim = c(0,0.07))
-par(new = TRUE)
-plot(gA[,10],ylim = c(0,0.07))
-par(new = TRUE)
-plot(gA[,15],ylim = c(0,0.07))

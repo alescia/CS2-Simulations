@@ -1,6 +1,7 @@
 # DISTRIBUTION FUNCTION; FOR DRAW OF RANDOM PRICES
 
 library(distr)
+library(ggplot2)
 
 pricesA<-seq(from=0, to=5,by=0.1)
 pricesBC<-c(pricesA,pricesA+5) # in second place, the CS prices --> identified as CS by adding 5
@@ -16,8 +17,8 @@ pA<-c(rdistA(1))
 pB<-c(rdistBC(1))
 pC<-c(rdistBC(1))
 
-# PROFIT FUNCTION
 
+# PROFIT FUNCTION
 
 profit_ftn<-function(pA,pB,pC){
 
@@ -58,7 +59,6 @@ profit_ftn<-function(pA,pB,pC){
 
 fbb<-function(x) profit_ftn(x[1],x[2],x[3]) #to compute max
 
-# test
 
 # Best Imitation Functions
 
@@ -88,8 +88,6 @@ pC=5
 print(Best(pA,pB,pC))
 
 
-
-
 # RUNNING SIMULATION OF BEST RESPONSE DYNAMICS FOR GRAPHICAL REPRESENTATION
 
 # INITIALIZATION
@@ -99,17 +97,15 @@ e<-1
 
 #start
 
-
-
 pA<-3
 pB<-5
 pC<-6
 
 P<-c(0,pA,pB,pC)
-mu=0.2
+mu=0.3
 lambda=0.2
-jig<-0.01 #size of price experimentation
-jig_st<-0.001 #probability of random format change
+jig<-0.015 #size of price experimentation
+jig_st<-0.002 #probability of random format change
 
 
 T<-5000
@@ -140,42 +136,37 @@ while(i<=T){
   i<-i+1
 }
 
-P
 P2<-matrix(P,ncol = 4)
 P2<-P2[2:(T+1),] # get rid of initial values
-Pf<-data.frame(P2)
-Pf
+nr_formatA<-(P2[,3]>5)+(P2[,4]>5)+1 # number of firms with format A
+nr_formatA <- as.factor(nr_formatA)
+#names(nr_formatA)<-c("firms with format A")
+levels(nr_formatA) <- c("1", "2","3")
+P3<-cbind(P2,nr_formatA)
 
-time<-Pf[,1]
-prices<-Pf[,2] # it does not matter which firm's price is chosen since all follow each other
-nr_formatA<-(Pf[,3]>5)+(Pf[,4]>5)+1 # number of firms with format A
+Pf<-data.frame(P3)
 
+names(Pf) <- c("time","prices","priceb","pricec","firmswithformatA")
+Pf$firmswithformatA <- as.factor(Pf$firmswithformatA)
+levels(Pf$firmswithformatA) <- c("1", "2","3")
 
 # graph in paper
-ggplot(Pf, aes(x=time, y=prices,group=1, colour=nr_formatA)) + geom_point(size=2) + geom_line(color='steelblue',size=1, alpha=0.3)
 
 
+ggplot(Pf, aes(x=time, y=prices, group=1, colour=firmswithformatA)) +
+  geom_point(size=2) + 
+  geom_line(color='steelblue',size=1, alpha=0.3)+
+  theme_minimal()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  xlab("period")
+
+ggsave("Figure_mu_0.3.pdf", width = 12, height = 6, units = "in", dpi = 400)
 
 
-qplot(c(seq(2,T+1,1)), Pf[,2]-5*as.numeric(Pf[,2]>5), data=Pf)
-
-qplot(c(seq(2,T+1,1)), Pf[,3]-5*as.numeric(Pf[,3]>5), data=Pf)
-qplot(c(seq(2,T+1,1)), as.numeric(Pf[,3]>5), data=Pf)
-qplot(c(seq(2,T+1,1)), Pf[,4]-5*as.numeric(Pf[,4]>5), data=Pf)
-qplot(c(seq(2,T+1,1)), as.numeric(Pf[,4]>5), data=Pf)
-
-
-
-
-
-
-
-
-# imitation graph in the triopoly
+# best imitation graph in the triopoly (given price by A and price by B, what is the best choice by C)
 
 mu<-0.5
 lambda<-0.5
-
 
 pA<-1
 pC<-5 #we do not care about this number since we compute what is the best to imitate of A and B for firm C

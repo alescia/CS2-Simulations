@@ -1,29 +1,10 @@
-# DISTRIBUTION FUNCTION; FOR DRAW OF RANDOM PRICES
-
 library(distr)
 library(nnet)
+library(ggplot2)
 
-pricesA<-seq(from=0, to=5,by=0.1) # careful with choosing step, in simulations, step=0.1. step=0.01 to get more precision in graph
-pricesBC<-c(pricesA,pricesA+5) # in second place, the CS prices --> identified as CS by adding 5
-
-#   to draw starting points
-distA <-DiscreteDistribution(supp = pricesA, prob = rep(1/length(pricesA),length(pricesA)))
-distBC <-DiscreteDistribution(supp = pricesBC, prob = rep(1/length(pricesBC),length(pricesBC)))
-#     
-rdistA <- r(distA)                 # function to create random variates from p
-rdistBC <- r(distBC)
-
-pA<-c(rdistA(1))
-pB<-c(rdistBC(1))
-pC<-c(rdistBC(1))
-
-# defining function to compare vectors with a bit of leeway 
-#(since R makes things difficult and like to torture people with nitty gritty)
-
-elementwise.all.equal <- Vectorize(function(x, y) {isTRUE(all.equal(x, y))})
-
-
+##################
 # PROFIT FUNCTION
+##################
 
 v<-5
 e<-1
@@ -68,7 +49,9 @@ fbb<-function(x) profit_ftn(x[1],x[2],x[3]) #to compute max
 
 print(profit_ftn(2,2.9,6.9))
 
+##########################
 # Best Response Functions
+##########################
 
 BRC<-function(pA,pB,pC){
   #vector of prices for given pA, pB
@@ -119,8 +102,10 @@ fBRA<-function(x) BRA(x[1],x[2],x[3]) #to compute as function of vector
 fBRB<-function(x) BRB(x[1],x[2],x[3]) #to compute as function of vector
 fBRC<-function(x) BRC(x[1],x[2],x[3]) #to compute as function of vector
 
-
+############################################################################
 # answers to scenarios to be played by participants in advance of experiment
+############################################################################
+
 # set prices to be computed with 1cent precision
 
 vmu<-c(0,0.1,0.2)
@@ -138,7 +123,30 @@ results<-cbind(results, c(mu,lambda,s1,s2,s3,s4))
 }
 results
 
+#######################################################################
+# duopoly BRF graph, with data from excel simulations, for paper
+#######################################################################
+
+pA<-seq(from=0, to=5,by=0.1)
+stB<-c(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.5,1,1,1,1,1,1,1,1,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5)
+format<-as.factor(stB)
+levels(format) <- c("own", "indifferent", "format A")
+pB<-c(0.90,1,1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,2,2.1,2.2,2.3,2.4,2.5,2.6,2.7,2.8,2.9,3,3.1,3.2,3.3,3.4,3.5,2.6,2.7,2.8,2.9,3,3.1,3.2,3.3,2.4,2.5,2.6,2.7,2.8,2.9,3,3.1,3.2,3.3,3.4,3.5,3.6,3.7,3.8,3.9)
+P<-data.frame(pA,pB,stB)
+ggplot(P, aes(x=pA, y=pB, group=1, shape=format)) + 
+  geom_point(size=4) + 
+  geom_point(color='steelblue',size=1, alpha=0.3)+ 
+  expand_limits(x = 0, y = 0)+
+  theme_light()+
+  xlab("price by firm A")+ylab("price by firm B")
+
+ggsave("Figure_BRF_Duopoly.pdf", width = 12, height = 6, units = "in", dpi = 400)
+
+
+
+#############################
 # BRF graph in the triopoly
+#############################
 
 
 pA<-pC<-5
@@ -156,49 +164,46 @@ P3<-matrix(P2,ncol = 6)
 P<-data.frame(P3)
 P$X1 <- factor(P$X1, levels = P$X1)
 
-library(ggplot2)
-
 pB<-P[,3]
 pC<-P[,6]
 format<-factor(P[,5])
 
 ggplot(P, aes(x=pB, y=pC, group=1, color=format)) + geom_point(size=4) + geom_point(color='steelblue',size=1, alpha=0.3)
 
-
+############################################################################
 # RUNNING SIMULATION OF BEST RESPONSE DYNAMICS FOR GRAPHICAL REPRESENTATION
+############################################################################
 
 # INITIALIZATION
+
+pricesA<-seq(from=0, to=5,by=0.05) # careful with choosing step, in simulations, step=0.1. step=0.01 to get more precision in graph, but can lead to dynamics that are too slow
+pricesBC<-c(pricesA,pricesA+5) # in second place, the CS prices --> identified as CS by adding 5
+
 
 v<-5
 e<-1
 
 #start
 
-pA<-c(rdistA(1))
-pB<-c(rdistBC(1))
-pC<-c(rdistBC(1))
+pA<-2
+pB<-2
+pC<-2
 
 P<-c(pA,"A")
-mu=0.7
-lambda=0.3
+mu=0.5
+lambda=0.2
 
+# SIMULATION
 
-T<-180
+T<-200
 i<-1
 while(i<=T){
-  rnd<-sample(1:3,1,replace=T)
-  if(rnd==2){
     pB<-BRB(pA,pB,pC)
     P<-rbind(P,c(pB,"B"))
-  }
-  if(rnd==3){
     pC<-BRC(pA,pB,pC)
     P<-rbind(P,c(pC,"C"))
-  }
-  if(rnd==1){
     pA<-BRA(pA,pB,pC)
     P<-rbind(P,c(pA,"A"))
-  }
 i<-i+1
 }
 
@@ -211,28 +216,57 @@ p<-matrix(p,ncol = 4)
 
 P2<-cbind(as.numeric(seq(1,T+1,1)),p)
 P3<-matrix(P2,ncol = 5)
+P3<-data.frame(P3)
+P3$X5 <- as.numeric(as.character(P3$X5))
+
 P<-data.frame(P3)
-P$X1 <- factor(P$X1, levels = P$X1)
-P$X5 <- as.numeric(as.character(P$X5))
 
-
-library(ggplot2)
 qplot(P[,1], P[,5], data=P, colour=P[,3])
 
-P30<-P[(T/2):T,]
+P30<-P[50:200,]
 P30[,4]<-as.numeric(P30[,4])-1
 P30[,4]<-P30[,4]+as.numeric(P30[,3]=="A")
 
-time<-P30[,1]
-prices<-P30[,5]
-format<-factor(P30[,4])
-firm<-P30[,3]
+P30<-data.frame(P30)
+
+names(P30) <- c("time","p","firm","format","prices")
+
+P30$format <- as.factor(P30$format)
+levels(P30$format) <- c("own", "format A")
+
+#P30$time is a factor -> BAD
+P30$time <- as.numeric(as.character(P30$time)) # -> now it is numeric
 
 # graph in paper (depends on random draw of turns to best reply)
-ggplot(P30, aes(x=time, y=prices,group=1, colour=format,shape=firm)) + geom_point(size=4) + geom_line(color='steelblue',size=1, alpha=0.3)
+ggplot(P30, aes(x=time, y=prices,group=1, colour=format,shape=firm)) + 
+  geom_point(size=4) + 
+  geom_line(color='steelblue',size=1, alpha=0.3) +
+  theme_minimal()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1), legend.position = "bottom")+
+  xlab("period")+
+  scale_x_continuous(breaks = seq(50,200,10))+
+  scale_shape_manual(values=LETTERS, guide=FALSE)
+  
+ggsave("Figure_BRF.pdf", width = 12, height = 6, units = "in", dpi = 400)
 
 
+###############################################################################################################
 # RUNNING SIMULATIONS FOR COMPUTATION OF AVERAGE PROFIT BY CONDITION; WITH RANDOM SEQUENCE OF BR AND LATENCY
+###############################################################################################################
+
+pricesA<-seq(from=0, to=5,by=0.1) # careful with choosing step, in simulations, step=0.1. step=0.01 to get more precision in graph
+pricesBC<-c(pricesA,pricesA+5) # in second place, the CS prices --> identified as CS by adding 5
+
+#   to draw starting points
+distA <-DiscreteDistribution(supp = pricesA, prob = rep(1/length(pricesA),length(pricesA)))
+distBC <-DiscreteDistribution(supp = pricesBC, prob = rep(1/length(pricesBC),length(pricesBC)))
+#     
+rdistA <- r(distA)                 # function to create random variates from p
+rdistBC <- r(distBC)
+
+pA<-c(rdistA(1))
+pB<-c(rdistBC(1))
+pC<-c(rdistBC(1))
 
 
 table_param=1
@@ -259,21 +293,18 @@ for(mu in unique(vmu)){
     print(mu)
     print(lambda)
     
-    J<-1 # number of different starting prices to go through
-    T<-20000 # number of periods after given starting price
+    J<-100 # number of different starting prices to go through
+    T<-200 # number of periods after given starting price
     
     P<-matrix(-1,ncol=3,nrow=J*T+1) #matrix to record prices over time
     P[1,]<-c(0,0,0)
     j<-1
     while(j<=J){ 
       
-#      pA<-c(rdistA(1)) #random starting prices
-#      pB<-c(rdistBC(1))
-#      pC<-c(rdistBC(1))
-      pA<-2 # arbitary starting prices
-      pB<-2
-      pC<-2
-      
+      pA<-c(rdistA(1)) #random starting prices
+      pB<-c(rdistBC(1))
+      pC<-c(rdistBC(1))
+
       P[(j-1)*T+1,]<-c(pA,pB,pC)
       i<-2      
       while(i<=T){
@@ -299,13 +330,30 @@ for(mu in unique(vmu)){
         }
       j<-j+1
     }
+
+    P    
+    P2<-matrix(-1,ncol=3,nrow=J*T/2) #matrix without half (starting) periods
+    P2
+    j<-1
+    while(j<=J){
+      i<-T/2+1
+      while(i<=T){
+        P2[(j-1)*T/2+i-T/2,]<-P[(j-1)*T+i,]
+        i<-i+1
+        }
+      j<-j+1
+      }
+    j 
+    i
+    P2   
+    P  
+    t<-apply(X=P2,MARGIN=1,FUN=fbb)
     
-    t<-apply(X=P,MARGIN=1,FUN=fbb)
-    profitA<-mean(t[1,2:(J*T+1)])
-    profitBC<-mean(t[2:3,2:(J*T+1)])
-    format<-mean(P[2:(J*T+1),2:3]>5)
-    formatB<-mean(P[2:(J*T+1),2]>5)
-    formatC<-mean(P[2:(J*T+1),3]>5)
+    profitA<-mean(t[1,])
+    profitBC<-mean(t[2:3,])
+    format<-mean(P2[,2:3]>5)
+    formatB<-mean(P2[,2]>5)
+    formatC<-mean(P2[,3]>5)
     
     profit<-rbind(profit,c(mu,lambda,profitA,profitBC,format,formatB,formatC))
   }}
@@ -317,10 +365,3 @@ if(table_param==1){
 write.csv(profitABC, file="profitABC_table_param.csv")
   }else{
   write.csv(profitABC, file="profitABC_experiment_param.csv")}
-
-Pf<-data.frame(P)
-qplot(c(seq(1,T*J+1,1)), Pf[,3]-5*as.numeric(Pf[,3]>5), data=Pf)
-qplot(c(seq(1,T*J+1,1)), Pf[,2]-5*as.numeric(Pf[,2]>5), data=Pf)
-qplot(c(seq(1,T*J+1,1)), Pf[,1]-5*as.numeric(Pf[,1]>5), data=Pf)
-
-
