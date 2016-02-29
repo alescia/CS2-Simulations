@@ -130,19 +130,31 @@ results
 pA<-seq(from=0, to=5,by=0.1)
 stB<-c(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.5,1,1,1,1,1,1,1,1,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5)
 format<-as.factor(stB)
-levels(format) <- c("own", "indifferent", "format A")
+levels(format) <- c("B", "X", "A")
+format <- factor(format,levels(format)[c(3,1,2)])
 pB<-c(0.90,1,1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,2,2.1,2.2,2.3,2.4,2.5,2.6,2.7,2.8,2.9,3,3.1,3.2,3.3,3.4,3.5,2.6,2.7,2.8,2.9,3,3.1,3.2,3.3,2.4,2.5,2.6,2.7,2.8,2.9,3,3.1,3.2,3.3,3.4,3.5,3.6,3.7,3.8,3.9)
-P<-data.frame(pA,pB,stB)
-ggplot(P, aes(x=pA, y=pB, group=1, shape=format)) + 
+P<-data.frame(pA,pB,format)
+
+lab <- c("A","B","X")
+initialShapes <- unlist(lapply(lab, utf8ToInt))
+
+ggplot(data=P, aes(x=pA, y=pB, shape = format, label=format)) + 
   geom_point(size=4) + 
-  geom_point(color='steelblue',size=1, alpha=0.3)+ 
+  # geom_text()+
+  #geom_point(color='steelblue',size=1, alpha=0.3)+ 
   expand_limits(x = 0, y = 0)+
   theme_light()+
-  xlab("price by firm A")+ylab("price by firm B")
-
+  xlab("price by firm A")+ylab("price by firm B")+
+  scale_shape_manual(values = initialShapes,
+                     labels=c("Format A", "Format B", "Indifferent"))+
+  theme(legend.position = "bottom", legend.title = element_blank())
 ggsave("Figure_BRF_Duopoly.pdf", width = 12, height = 6, units = "in", dpi = 400)
 
-
+theme_light()
+ggplot(data = iris,
+       aes(x = Sepal.Length, y = Sepal.Width, colour = Species, shape = Species, label = Species)) + 
+  geom_point() +
+  geom_text(show.legend = FALSE)
 
 #############################
 # BRF graph in the triopoly
