@@ -69,7 +69,7 @@ for(mu in unique(vmu)){
 
 # rounds of learning iterations
   i<-1
-  N<-100000
+  N<-10000
   while(i<=100){
     set.seed(1)                      # for reproduceable example
     #print(i)
